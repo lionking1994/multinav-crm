@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import type { CommunityEngagement } from '../types';
 import Card from './Card';
 import { communityEngagementService } from '../services/supabaseService';
-import { Plus, Trash2, Pencil, FileDown, Search, X, Calendar, Building2, Users, FileText, Home, Globe, Eye } from 'lucide-react';
+import { Plus, Trash2, Pencil, FileDown, Search, X, Calendar, Building2, Users, FileText, Home, Globe, Eye, AlertTriangle } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
@@ -26,6 +26,7 @@ const CommunityEngagementRegister: React.FC<CommunityEngagementRegisterProps> = 
   const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({
     dateOfMeeting: '',
+    priorityLevel: '' as '' | '1' | '2' | '3',
     agencyType: 'external' as 'internal' | 'external',
     agencyName: '',
     staffPresent: '',
@@ -35,6 +36,20 @@ const CommunityEngagementRegister: React.FC<CommunityEngagementRegisterProps> = 
   const [isViewOnly, setIsViewOnly] = useState(false);
 
   const isNavigator = currentUser?.role === 'navigator';
+
+  const getPriorityLabel = (level?: 1 | 2 | 3) => {
+    if (level === 1) return 'High';
+    if (level === 2) return 'Moderate';
+    if (level === 3) return 'Low';
+    return '';
+  };
+
+  const getPriorityBadgeClasses = (level?: 1 | 2 | 3) => {
+    if (level === 1) return 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300';
+    if (level === 2) return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300';
+    if (level === 3) return 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300';
+    return 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400';
+  };
 
   // All users can see all engagements
   const filteredEngagements = engagements.filter(engagement => {
@@ -50,6 +65,7 @@ const CommunityEngagementRegister: React.FC<CommunityEngagementRegisterProps> = 
     setSelectedEngagement(null);
     setFormData({
       dateOfMeeting: new Date().toISOString().split('T')[0],
+      priorityLevel: '',
       agencyType: 'external',
       agencyName: '',
       staffPresent: '',
@@ -62,6 +78,7 @@ const CommunityEngagementRegister: React.FC<CommunityEngagementRegisterProps> = 
     setSelectedEngagement(engagement);
     setFormData({
       dateOfMeeting: engagement.dateOfMeeting,
+      priorityLevel: engagement.priorityLevel ? String(engagement.priorityLevel) as '1' | '2' | '3' : '',
       agencyType: engagement.agencyType || 'external',
       agencyName: engagement.agencyName,
       staffPresent: engagement.staffPresent,
@@ -75,6 +92,7 @@ const CommunityEngagementRegister: React.FC<CommunityEngagementRegisterProps> = 
     setSelectedEngagement(engagement);
     setFormData({
       dateOfMeeting: engagement.dateOfMeeting,
+      priorityLevel: engagement.priorityLevel ? String(engagement.priorityLevel) as '1' | '2' | '3' : '',
       agencyType: engagement.agencyType || 'external',
       agencyName: engagement.agencyName,
       staffPresent: engagement.staffPresent,
@@ -107,14 +125,23 @@ const CommunityEngagementRegister: React.FC<CommunityEngagementRegisterProps> = 
     setIsSaving(true);
     
     try {
+      const payload = {
+        dateOfMeeting: formData.dateOfMeeting,
+        priorityLevel: formData.priorityLevel ? (Number(formData.priorityLevel) as 1 | 2 | 3) : undefined,
+        agencyType: formData.agencyType,
+        agencyName: formData.agencyName,
+        staffPresent: formData.staffPresent,
+        meetingNotes: formData.meetingNotes
+      };
+
       if (selectedEngagement) {
         // Update existing engagement
-        const updatedEngagement = await communityEngagementService.update(selectedEngagement.id, formData);
-        setEngagements(engagements.map(e => e.id === selectedEngagement.id ? { ...e, ...formData } : e));
+        await communityEngagementService.update(selectedEngagement.id, payload);
+        setEngagements(engagements.map(e => e.id === selectedEngagement.id ? { ...e, ...payload } : e));
       } else {
         // Create new engagement
         const newEngagement: CommunityEngagement = {
-          ...formData,
+          ...payload,
           id: `CE${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
           createdBy: currentUser?.email || 'unknown@multinav.com',
           createdByName: currentUser?.name || 'Unknown User',
@@ -141,12 +168,13 @@ const CommunityEngagementRegister: React.FC<CommunityEngagementRegisterProps> = 
   };
   
   const handleDownloadCSV = () => {
-    const headers = ["ID", "Date of Meeting/Event", "Agency Type", "Agency Name", "Staff Present", "Meeting Notes", "Created By", "Created At"];
+    const headers = ["ID", "Date of Meeting/Event", "Level of Priority", "Agency Type", "Agency Name", "Staff Present", "Meeting Notes", "Created By", "Created At"];
     const csvRows = [
       headers.join(','),
       ...filteredEngagements.map(e => [
         `"${e.id}"`,
         `"${e.dateOfMeeting}"`,
+        `"${e.priorityLevel ? `${e.priorityLevel} - ${getPriorityLabel(e.priorityLevel)}` : ''}"`,
         `"${e.agencyType === 'internal' ? 'Internal' : 'External'}"`,
         `"${e.agencyName.replace(/"/g, '""')}"`,
         `"${e.staffPresent.replace(/"/g, '""')}"`,
@@ -182,9 +210,10 @@ const CommunityEngagementRegister: React.FC<CommunityEngagementRegisterProps> = 
     doc.setTextColor(100);
     doc.text(`Generated: ${new Date().toLocaleDateString('en-AU')} | Total Records: ${filteredEngagements.length}`, pageWidth / 2, 22, { align: 'center' });
 
-    const tableHead = [["Date", "Type", "Agency Name", "Staff Present", "Meeting Notes"]];
+    const tableHead = [["Date", "Priority", "Type", "Agency Name", "Staff Present", "Meeting Notes"]];
     const tableBody = filteredEngagements.map(e => [
       e.dateOfMeeting ? new Date(e.dateOfMeeting).toLocaleDateString('en-AU') : 'N/A',
+      e.priorityLevel ? `${e.priorityLevel} - ${getPriorityLabel(e.priorityLevel)}` : 'N/A',
       e.agencyType === 'internal' ? 'Internal' : 'External',
       e.agencyName || 'N/A',
       e.staffPresent || 'N/A',
@@ -210,10 +239,11 @@ const CommunityEngagementRegister: React.FC<CommunityEngagementRegisterProps> = 
       },
       columnStyles: {
         0: { cellWidth: 25, halign: 'center' },  // Date
-        1: { cellWidth: 22, halign: 'center' },  // Type
-        2: { cellWidth: 55 },                     // Agency Name
-        3: { cellWidth: 50 },                     // Staff Present
-        4: { cellWidth: 'auto' }                  // Meeting Notes - takes remaining space
+        1: { cellWidth: 25, halign: 'center' },  // Priority
+        2: { cellWidth: 22, halign: 'center' },  // Type
+        3: { cellWidth: 50 },                     // Agency Name
+        4: { cellWidth: 45 },                     // Staff Present
+        5: { cellWidth: 'auto' }                  // Meeting Notes - takes remaining space
       },
       alternateRowStyles: {
         fillColor: [245, 245, 245]
@@ -258,12 +288,16 @@ const CommunityEngagementRegister: React.FC<CommunityEngagementRegisterProps> = 
       tr:nth-child(even) { background-color: #f9fafb; }
       tr:hover { background-color: #f0fdf4; }
       .col-date { width: 70px; text-align: center; }
+      .col-priority { width: 70px; text-align: center; }
       .col-type { width: 60px; text-align: center; }
       .col-agency { width: 140px; }
       .col-staff { width: 120px; }
       .col-notes { width: auto; }
       .type-internal { background-color: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; font-size: 8pt; }
       .type-external { background-color: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 3px; font-size: 8pt; }
+      .priority-1 { background-color: #fee2e2; color: #b91c1c; padding: 2px 6px; border-radius: 3px; font-size: 8pt; }
+      .priority-2 { background-color: #fef9c3; color: #854d0e; padding: 2px 6px; border-radius: 3px; font-size: 8pt; }
+      .priority-3 { background-color: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; font-size: 8pt; }
       .footer { text-align: center; font-size: 8pt; color: #888; margin-top: 20px; border-top: 1px solid #e5e7eb; padding-top: 8px; }
       .page-number { text-align: right; font-size: 8pt; color: #999; }
     </style>`;
@@ -294,6 +328,7 @@ const CommunityEngagementRegister: React.FC<CommunityEngagementRegisterProps> = 
     content += `<table>
       <tr>
         <th class="col-date">Date</th>
+        <th class="col-priority">Priority</th>
         <th class="col-type">Type</th>
         <th class="col-agency">Agency Name</th>
         <th class="col-staff">Staff Present</th>
@@ -304,9 +339,13 @@ const CommunityEngagementRegister: React.FC<CommunityEngagementRegisterProps> = 
       const typeClass = e.agencyType === 'internal' ? 'type-internal' : 'type-external';
       const typeLabel = e.agencyType === 'internal' ? 'Internal' : 'External';
       const notes = (e.meetingNotes || 'N/A').replace(/\n/g, '<br>');
+      const priorityCell = e.priorityLevel
+        ? `<span class="priority-${e.priorityLevel}">${e.priorityLevel} - ${getPriorityLabel(e.priorityLevel)}</span>`
+        : '-';
       content += `
         <tr>
           <td class="col-date">${e.dateOfMeeting ? new Date(e.dateOfMeeting).toLocaleDateString('en-AU') : 'N/A'}</td>
+          <td class="col-priority">${priorityCell}</td>
           <td class="col-type"><span class="${typeClass}">${typeLabel}</span></td>
           <td class="col-agency"><strong>${e.agencyName || 'N/A'}</strong></td>
           <td class="col-staff">${e.staffPresent || '-'}</td>
@@ -359,6 +398,25 @@ const CommunityEngagementRegister: React.FC<CommunityEngagementRegisterProps> = 
               className="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-lime-green-500 focus:ring-lime-green-500 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-900 disabled:cursor-not-allowed"
               required
             />
+          </div>
+
+          {/* Level of Priority */}
+          <div>
+            <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <AlertTriangle className="w-4 h-4 mr-2 text-lime-green-500" />
+              Level of Priority
+            </label>
+            <select
+              value={formData.priorityLevel}
+              onChange={(e) => setFormData({ ...formData, priorityLevel: e.target.value as '' | '1' | '2' | '3' })}
+              disabled={isViewOnly}
+              className="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-lime-green-500 focus:ring-lime-green-500 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-900 disabled:cursor-not-allowed"
+            >
+              <option value="">Select priority level</option>
+              <option value="1">1 - High</option>
+              <option value="2">2 - Moderate</option>
+              <option value="3">3 - Low</option>
+            </select>
           </div>
 
           {/* Agency Type */}
@@ -529,6 +587,7 @@ const CommunityEngagementRegister: React.FC<CommunityEngagementRegisterProps> = 
           <thead className="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-300">
             <tr>
               <th scope="col" className="px-3 py-3 w-24">Date</th>
+              <th scope="col" className="px-3 py-3 w-24">Priority</th>
               <th scope="col" className="px-3 py-3 w-24">Type</th>
               <th scope="col" className="px-3 py-3 w-36">Agency Name</th>
               <th scope="col" className="px-3 py-3 w-32">Staff Present</th>
@@ -542,6 +601,15 @@ const CommunityEngagementRegister: React.FC<CommunityEngagementRegisterProps> = 
               <tr key={engagement.id} className="bg-white border-b dark:bg-gray-900 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
                 <td className="px-3 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white text-xs">
                   {engagement.dateOfMeeting ? new Date(engagement.dateOfMeeting).toLocaleDateString('en-AU') : 'N/A'}
+                </td>
+                <td className="px-3 py-4">
+                  {engagement.priorityLevel ? (
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getPriorityBadgeClasses(engagement.priorityLevel)}`}>
+                      {engagement.priorityLevel} - {getPriorityLabel(engagement.priorityLevel)}
+                    </span>
+                  ) : (
+                    <span className="text-gray-400 text-xs">-</span>
+                  )}
                 </td>
                 <td className="px-3 py-4">
                   <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
@@ -607,7 +675,7 @@ const CommunityEngagementRegister: React.FC<CommunityEngagementRegisterProps> = 
               </tr>
             )) : (
               <tr>
-                <td colSpan={7} className="text-center py-10 text-gray-500 dark:text-gray-400">
+                <td colSpan={8} className="text-center py-10 text-gray-500 dark:text-gray-400">
                   {searchQuery ? 'No engagements match your search.' : 'No engagements recorded. Add a new engagement to get started.'}
                 </td>
               </tr>

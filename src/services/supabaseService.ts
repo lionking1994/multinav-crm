@@ -13,7 +13,8 @@ import type {
   UserRole,
   UserActivity,
   CommunityEngagement,
-  SurveyResponse
+  SurveyResponse,
+  CommunityEvent
 } from '../types';
 
 // Initialize Supabase client
@@ -44,6 +45,8 @@ export const clientService = {
       languages: client.languages || [],
       referralSource: client.referral_source,
       referringOrganisation: client.referring_organisation || undefined,
+      referringOrganisationContactPerson: client.referring_organisation_contact_person || undefined,
+      referringOrganisationContactPhone: client.referring_organisation_contact_phone || undefined,
       referralDate: client.referral_date,
       address: client.address,
       postcode: client.postcode,
@@ -72,6 +75,8 @@ export const clientService = {
         languages: client.languages,
         referral_source: client.referralSource,
         referring_organisation: client.referringOrganisation || null,
+        referring_organisation_contact_person: client.referringOrganisationContactPerson || null,
+        referring_organisation_contact_phone: client.referringOrganisationContactPhone || null,
         referral_date: client.referralDate,
         address: client.address,
         postcode: client.postcode,
@@ -107,6 +112,8 @@ export const clientService = {
     if (client.languages !== undefined) updateData.languages = client.languages;
     if (client.referralSource !== undefined) updateData.referral_source = client.referralSource;
     if (client.referringOrganisation !== undefined) updateData.referring_organisation = client.referringOrganisation || null;
+    if (client.referringOrganisationContactPerson !== undefined) updateData.referring_organisation_contact_person = client.referringOrganisationContactPerson || null;
+    if (client.referringOrganisationContactPhone !== undefined) updateData.referring_organisation_contact_phone = client.referringOrganisationContactPhone || null;
     if (client.referralDate !== undefined) updateData.referral_date = client.referralDate;
     if (client.address !== undefined) updateData.address = client.address;
     if (client.postcode !== undefined) updateData.postcode = client.postcode;
@@ -143,6 +150,8 @@ export const clientService = {
       languages: data.languages || [],
       referralSource: data.referral_source,
       referringOrganisation: data.referring_organisation || undefined,
+      referringOrganisationContactPerson: data.referring_organisation_contact_person || undefined,
+      referringOrganisationContactPhone: data.referring_organisation_contact_phone || undefined,
       referralDate: data.referral_date,
       address: data.address,
       postcode: data.postcode,
@@ -1002,6 +1011,7 @@ export const communityEngagementService = {
     return (data || []).map(engagement => ({
       id: engagement.id,
       dateOfMeeting: engagement.date_of_meeting,
+      priorityLevel: engagement.priority_level || undefined,
       agencyType: engagement.agency_type || 'external',
       agencyName: engagement.agency_name,
       staffPresent: engagement.staff_present,
@@ -1019,6 +1029,7 @@ export const communityEngagementService = {
       .insert({
         id: engagement.id,
         date_of_meeting: engagement.dateOfMeeting,
+        priority_level: engagement.priorityLevel || null,
         agency_type: engagement.agencyType,
         agency_name: engagement.agencyName,
         staff_present: engagement.staffPresent,
@@ -1039,6 +1050,7 @@ export const communityEngagementService = {
     const updateData: any = {};
     
     if (engagement.dateOfMeeting !== undefined) updateData.date_of_meeting = engagement.dateOfMeeting;
+    if (engagement.priorityLevel !== undefined) updateData.priority_level = engagement.priorityLevel || null;
     if (engagement.agencyType !== undefined) updateData.agency_type = engagement.agencyType;
     if (engagement.agencyName !== undefined) updateData.agency_name = engagement.agencyName;
     if (engagement.staffPresent !== undefined) updateData.staff_present = engagement.staffPresent;
@@ -1056,6 +1068,7 @@ export const communityEngagementService = {
     return {
       id: data.id,
       dateOfMeeting: data.date_of_meeting,
+      priorityLevel: data.priority_level || undefined,
       agencyType: data.agency_type || 'external',
       agencyName: data.agency_name,
       staffPresent: data.staff_present,
@@ -1073,6 +1086,127 @@ export const communityEngagementService = {
       .delete()
       .eq('id', id);
     
+    if (error) throw error;
+  }
+};
+
+// Community Events / Education Calendar Functions
+export const communityEventService = {
+  async getAll(startDate?: string, endDate?: string): Promise<CommunityEvent[]> {
+    let query = supabase
+      .from('community_events')
+      .select('*')
+      .order('event_date', { ascending: false });
+
+    if (startDate) {
+      query = query.gte('event_date', startDate);
+    }
+    if (endDate) {
+      query = query.lte('event_date', endDate);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    return (data || []).map(event => ({
+      id: event.id,
+      date: event.event_date,
+      topic: event.topic,
+      location: event.location || '',
+      groupPresentedTo: event.group_presented_to || '',
+      presenter: event.presenter || '',
+      agencyCollaborations: event.agency_collaborations || undefined,
+      organiser: event.organiser || '',
+      staffPresent: event.staff_present || '',
+      numberOfAttendees: event.number_of_attendees ?? undefined,
+      demographics: event.demographics || undefined,
+      notes: event.notes || undefined,
+      createdBy: event.created_by,
+      createdByName: event.created_by_name,
+      createdByRole: event.created_by_role,
+      createdAt: event.created_at
+    }));
+  },
+
+  async create(event: CommunityEvent): Promise<CommunityEvent> {
+    const { data, error } = await supabase
+      .from('community_events')
+      .insert({
+        id: event.id,
+        event_date: event.date,
+        topic: event.topic,
+        location: event.location || null,
+        group_presented_to: event.groupPresentedTo || null,
+        presenter: event.presenter || null,
+        agency_collaborations: event.agencyCollaborations || null,
+        organiser: event.organiser || null,
+        staff_present: event.staffPresent || null,
+        number_of_attendees: event.numberOfAttendees ?? null,
+        demographics: event.demographics || null,
+        notes: event.notes || null,
+        created_by: event.createdBy,
+        created_by_name: event.createdByName,
+        created_by_role: event.createdByRole
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return event;
+  },
+
+  async update(id: string, event: Partial<CommunityEvent>): Promise<CommunityEvent> {
+    const updateData: any = {};
+
+    if (event.date !== undefined) updateData.event_date = event.date;
+    if (event.topic !== undefined) updateData.topic = event.topic;
+    if (event.location !== undefined) updateData.location = event.location || null;
+    if (event.groupPresentedTo !== undefined) updateData.group_presented_to = event.groupPresentedTo || null;
+    if (event.presenter !== undefined) updateData.presenter = event.presenter || null;
+    if (event.agencyCollaborations !== undefined) updateData.agency_collaborations = event.agencyCollaborations || null;
+    if (event.organiser !== undefined) updateData.organiser = event.organiser || null;
+    if (event.staffPresent !== undefined) updateData.staff_present = event.staffPresent || null;
+    if (event.numberOfAttendees !== undefined) updateData.number_of_attendees = event.numberOfAttendees ?? null;
+    if (event.demographics !== undefined) updateData.demographics = event.demographics || null;
+    if (event.notes !== undefined) updateData.notes = event.notes || null;
+
+    const { data, error } = await supabase
+      .from('community_events')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return {
+      id: data.id,
+      date: data.event_date,
+      topic: data.topic,
+      location: data.location || '',
+      groupPresentedTo: data.group_presented_to || '',
+      presenter: data.presenter || '',
+      agencyCollaborations: data.agency_collaborations || undefined,
+      organiser: data.organiser || '',
+      staffPresent: data.staff_present || '',
+      numberOfAttendees: data.number_of_attendees ?? undefined,
+      demographics: data.demographics || undefined,
+      notes: data.notes || undefined,
+      createdBy: data.created_by,
+      createdByName: data.created_by_name,
+      createdByRole: data.created_by_role,
+      createdAt: data.created_at
+    };
+  },
+
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('community_events')
+      .delete()
+      .eq('id', id);
+
     if (error) throw error;
   }
 };

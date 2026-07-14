@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import type { Client, HealthActivity, WorkforceData, ProgramResource, GpPractice, PatientData, ChatMessage, CommunityEngagement } from './types';
-import { clientService, activityService, workforceService, resourceService, gpPracticeService, patientDataService, communityEngagementService } from './services/supabaseService';
+import type { Client, HealthActivity, WorkforceData, ProgramResource, GpPractice, PatientData, ChatMessage, CommunityEngagement, CommunityEvent } from './types';
+import { clientService, activityService, workforceService, resourceService, gpPracticeService, patientDataService, communityEngagementService, communityEventService } from './services/supabaseService';
 import ClientDemographics from './components/ClientDemographics';
 import HealthNavigationActivities from './components/HealthNavigationActivities';
 import WorkforceTracking from './components/WorkforceTracking';
@@ -16,9 +16,10 @@ import UnifiedReporting from './components/UnifiedReporting';
 import UserManagement from './components/UserManagement';
 import StaffPerformance from './components/StaffPerformance';
 import CommunityEngagementRegister from './components/CommunityEngagementRegister';
+import CommunityEventsCalendar from './components/CommunityEventsCalendar';
 import { userService } from './services/supabaseService';
 import type { User } from './types';
-import { Leaf, Users, HeartPulse, FolderKanban, BotMessageSquare, Sun, Moon, Menu, LayoutDashboard, Briefcase, LogOut, Stethoscope, Map, FilePieChart, FileBarChart, UserCog, BarChart3, Handshake } from 'lucide-react';
+import { Leaf, Users, HeartPulse, FolderKanban, BotMessageSquare, Sun, Moon, Menu, LayoutDashboard, Briefcase, LogOut, Stethoscope, Map, FilePieChart, FileBarChart, UserCog, BarChart3, Handshake, CalendarDays } from 'lucide-react';
 
 const App: React.FC = () => {
   // Staff-side data
@@ -29,6 +30,7 @@ const App: React.FC = () => {
   const [gpPractices, setGpPractices] = useState<GpPractice[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [communityEngagements, setCommunityEngagements] = useState<CommunityEngagement[]>([]);
+  const [communityEvents, setCommunityEvents] = useState<CommunityEvent[]>([]);
   
   // Patient-side data, keyed by client ID
   const [patientData, setPatientData] = useState<Record<string, PatientData>>({});
@@ -71,14 +73,15 @@ const App: React.FC = () => {
       
       try {
         // Try to load from database first
-        const [dbClients, dbActivities, dbWorkforce, dbResources, dbGpPractices, dbUsers, dbEngagements] = await Promise.all([
+        const [dbClients, dbActivities, dbWorkforce, dbResources, dbGpPractices, dbUsers, dbEngagements, dbCommunityEvents] = await Promise.all([
           clientService.getAll(),
           activityService.getAll(),
           workforceService.getAll(),
           resourceService.getAll(),
           gpPracticeService.getAll(),
           userService.getAll(),
-          communityEngagementService.getAll().catch(() => []) // Gracefully handle if table doesn't exist yet
+          communityEngagementService.getAll().catch(() => []), // Gracefully handle if table doesn't exist yet
+          communityEventService.getAll().catch(() => []) // Gracefully handle if table doesn't exist yet
         ]);
 
         setClients(dbClients);
@@ -235,6 +238,11 @@ const App: React.FC = () => {
         if (dbEngagements && dbEngagements.length > 0) {
           setCommunityEngagements(dbEngagements);
         }
+
+        // Load community events
+        if (dbCommunityEvents && dbCommunityEvents.length > 0) {
+          setCommunityEvents(dbCommunityEvents);
+        }
         
         isInitialDataLoaded.current = true;
       } catch (error) {
@@ -358,6 +366,7 @@ const App: React.FC = () => {
     { key: 'demographics', label: 'Client Management', icon: <Users /> },
     { key: 'activities', label: 'Health Navigation', icon: <HeartPulse /> },
     { key: 'communityEngagement', label: 'Community Engagement', icon: <Handshake /> },
+    { key: 'communityEventsCalendar', label: 'Events & Education Calendar', icon: <CalendarDays /> },
     { key: 'workforce', label: 'Workforce Tracking', icon: <Briefcase /> },
     { key: 'unifiedReporting', label: 'Unified Reporting', icon: <FileBarChart /> },
     { key: 'reporting', label: 'Program Reporting', icon: <FilePieChart /> },
@@ -375,7 +384,7 @@ const App: React.FC = () => {
     const userRole = session.userRole || 'navigator';
     
     // Define which items each role can access
-    const navigatorItems = ['demographics', 'activities', 'communityEngagement', 'gpEngagement', 'resources'];
+    const navigatorItems = ['demographics', 'activities', 'communityEngagement', 'communityEventsCalendar', 'gpEngagement', 'resources'];
     const coordinatorItems = [...navigatorItems, 'dashboard', 'reporting', 'workforce', 'insights'];
     const adminItems = allNavItems.map(item => item.key); // Admin gets everything
     
@@ -424,6 +433,16 @@ const App: React.FC = () => {
         return <CommunityEngagementRegister 
                     engagements={communityEngagements} 
                     setEngagements={setCommunityEngagements}
+                    currentUser={{
+                        email: session?.userEmail || '',
+                        role: session?.userRole || 'navigator',
+                        name: users.find(u => u.email === session?.userEmail)?.fullName || session?.userEmail?.split('@')[0] || 'Unknown'
+                    }}
+                />;
+      case 'communityEventsCalendar':
+        return <CommunityEventsCalendar
+                    events={communityEvents}
+                    setEvents={setCommunityEvents}
                     currentUser={{
                         email: session?.userEmail || '',
                         role: session?.userRole || 'navigator',
@@ -571,7 +590,7 @@ const App: React.FC = () => {
                 </div>
             </header>
             <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-8">
-                <div className={`mx-auto ${['workforce', 'gpEngagement', 'reporting'].includes(activeView) ? 'max-w-screen-2xl' : 'max-w-7xl'}`}>
+                <div className={`mx-auto ${['workforce', 'gpEngagement', 'reporting', 'communityEventsCalendar'].includes(activeView) ? 'max-w-screen-2xl' : 'max-w-7xl'}`}>
                     {renderStaffContent()}
                 </div>
             </main>

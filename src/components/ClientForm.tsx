@@ -27,6 +27,8 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialClient, users, activitie
     languages: initialClient?.languages || [],
     referralSource: initialClient?.referralSource || '',
     referringOrganisation: initialClient?.referringOrganisation || '',
+    referringOrganisationContactPerson: initialClient?.referringOrganisationContactPerson || '',
+    referringOrganisationContactPhone: initialClient?.referringOrganisationContactPhone || '',
     referralDate: initialClient?.referralDate || new Date().toISOString().split('T')[0],
     address: initialClient?.address || '',
     postcode: initialClient?.postcode || '',
@@ -184,6 +186,36 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialClient, users, activitie
               disabled={readOnly}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-green-500 focus:ring-lime-green-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-900 disabled:cursor-not-allowed"
               placeholder="Enter referring organisation..."
+            />
+          </div>
+
+          {/* Referring Organisation Contact Person */}
+          <div>
+            <label htmlFor="referringOrganisationContactPerson" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Referring Agency Contact Person (Optional)</label>
+            <input
+              type="text"
+              name="referringOrganisationContactPerson"
+              id="referringOrganisationContactPerson"
+              value={client.referringOrganisationContactPerson || ''}
+              onChange={handleInputChange}
+              disabled={readOnly}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-green-500 focus:ring-lime-green-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-900 disabled:cursor-not-allowed"
+              placeholder="Name of contact at referring agency"
+            />
+          </div>
+
+          {/* Referring Organisation Contact Phone */}
+          <div>
+            <label htmlFor="referringOrganisationContactPhone" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Referring Agency Contact Phone (Optional)</label>
+            <input
+              type="tel"
+              name="referringOrganisationContactPhone"
+              id="referringOrganisationContactPhone"
+              value={client.referringOrganisationContactPhone || ''}
+              onChange={handleInputChange}
+              disabled={readOnly}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-green-500 focus:ring-lime-green-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-900 disabled:cursor-not-allowed"
+              placeholder="+61 400 000 000"
             />
           </div>
 

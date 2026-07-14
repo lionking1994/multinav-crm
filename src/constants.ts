@@ -76,6 +76,10 @@ export const PREVENTIVE_SERVICES_OPTIONS = [
   'Immunisation', 'Cervical Screening', 'Breast Screening', 'Bowel Screening'
 ];
 
+export const LOCATION_OPTIONS = [
+  'Canning', 'Gosnells', 'Mandurah', 'Stirling', 'Swan', 'Wanneroo'
+];
+
 export const MATERNAL_CHILD_HEALTH_OPTIONS = [
   'Prenatal / Pregnancy Services', 'Infant / Child Health Checks',
   'Breastfeeding Support', 'Child Development', 'Family Planning'

@@ -9,6 +9,10 @@ export interface Client {
   languages: string[];
   referralSource: string;
   referringOrganisation?: string;
+  /** Contact person at the referring organisation/agency */
+  referringOrganisationContactPerson?: string;
+  /** Phone number for the referring organisation/agency contact */
+  referringOrganisationContactPhone?: string;
   referralDate: string;
   address?: string;
   postcode?: string;
@@ -135,10 +139,31 @@ export interface SurveyResponse {
 export interface CommunityEngagement {
   id: string;
   dateOfMeeting: string;
+  /** 1 = High, 2 = Moderate, 3 = Low */
+  priorityLevel?: 1 | 2 | 3;
   agencyType: 'internal' | 'external';
   agencyName: string;
   staffPresent: string;
   meetingNotes: string;
+  createdBy?: string;
+  createdByName?: string;
+  createdByRole?: 'admin' | 'coordinator' | 'navigator';
+  createdAt?: string;
+}
+
+export interface CommunityEvent {
+  id: string;
+  date: string;
+  topic: string;
+  location: string;
+  groupPresentedTo: string;
+  presenter: string;
+  agencyCollaborations?: string;
+  organiser: string;
+  staffPresent: string;
+  numberOfAttendees?: number | null;
+  demographics?: string;
+  notes?: string;
   createdBy?: string;
   createdByName?: string;
   createdByRole?: 'admin' | 'coordinator' | 'navigator';
