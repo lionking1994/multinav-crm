@@ -47,6 +47,7 @@ export const clientService = {
       referringOrganisation: client.referring_organisation || undefined,
       referringOrganisationContactPerson: client.referring_organisation_contact_person || undefined,
       referringOrganisationContactPhone: client.referring_organisation_contact_phone || undefined,
+      referringOrganisationContactEmail: client.referring_organisation_contact_email || undefined,
       referralDate: client.referral_date,
       address: client.address,
       postcode: client.postcode,
@@ -77,6 +78,7 @@ export const clientService = {
         referring_organisation: client.referringOrganisation || null,
         referring_organisation_contact_person: client.referringOrganisationContactPerson || null,
         referring_organisation_contact_phone: client.referringOrganisationContactPhone || null,
+        referring_organisation_contact_email: client.referringOrganisationContactEmail || null,
         referral_date: client.referralDate,
         address: client.address,
         postcode: client.postcode,
@@ -114,6 +116,7 @@ export const clientService = {
     if (client.referringOrganisation !== undefined) updateData.referring_organisation = client.referringOrganisation || null;
     if (client.referringOrganisationContactPerson !== undefined) updateData.referring_organisation_contact_person = client.referringOrganisationContactPerson || null;
     if (client.referringOrganisationContactPhone !== undefined) updateData.referring_organisation_contact_phone = client.referringOrganisationContactPhone || null;
+    if (client.referringOrganisationContactEmail !== undefined) updateData.referring_organisation_contact_email = client.referringOrganisationContactEmail || null;
     if (client.referralDate !== undefined) updateData.referral_date = client.referralDate;
     if (client.address !== undefined) updateData.address = client.address;
     if (client.postcode !== undefined) updateData.postcode = client.postcode;
@@ -152,6 +155,7 @@ export const clientService = {
       referringOrganisation: data.referring_organisation || undefined,
       referringOrganisationContactPerson: data.referring_organisation_contact_person || undefined,
       referringOrganisationContactPhone: data.referring_organisation_contact_phone || undefined,
+      referringOrganisationContactEmail: data.referring_organisation_contact_email || undefined,
       referralDate: data.referral_date,
       address: data.address,
       postcode: data.postcode,

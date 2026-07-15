@@ -13,6 +13,8 @@ export interface Client {
   referringOrganisationContactPerson?: string;
   /** Phone number for the referring organisation/agency contact */
   referringOrganisationContactPhone?: string;
+  /** Email address for the referring organisation/agency contact */
+  referringOrganisationContactEmail?: string;
   referralDate: string;
   address?: string;
   postcode?: string;
