@@ -160,9 +160,10 @@ const CommunityEventsCalendar: React.FC<CommunityEventsCalendarProps> = ({ event
       try {
         await communityEventService.delete(id);
         setEvents(events.filter(e => e.id !== id));
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error deleting community event:', error);
-        alert('Failed to delete event. Please try again.');
+        const detail = error?.message || error?.error_description || error?.hint || error?.code;
+        alert(detail ? `Failed to delete event: ${detail}` : 'Failed to delete event. Please try again.');
       }
     }
   };
@@ -209,9 +210,10 @@ const CommunityEventsCalendar: React.FC<CommunityEventsCalendarProps> = ({ event
       }
       setView(returnView);
       setSelectedEvent(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving community event:', error);
-      alert('Failed to save event. Please check your database connection.');
+      const detail = error?.message || error?.error_description || error?.hint || error?.code;
+      alert(detail ? `Failed to save event: ${detail}` : 'Failed to save event. Please check your database connection.');
     } finally {
       setIsSaving(false);
     }
