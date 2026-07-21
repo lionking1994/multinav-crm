@@ -51,9 +51,10 @@ const ClientDemographics: React.FC<ClientDemographicsProps> = ({ clients, setCli
       try {
         await clientService.delete(clientId);
         setClients(clients.filter(c => c.id !== clientId));
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error deleting client:', error);
-        alert('Failed to delete client. Please try again.');
+        const detail = error?.message || error?.error_description || error?.hint || error?.code;
+        alert(detail ? `Failed to delete client: ${detail}` : 'Failed to delete client. Please try again.');
       }
     }
   };
@@ -78,9 +79,10 @@ const ClientDemographics: React.FC<ClientDemographicsProps> = ({ clients, setCli
       }
       setView('list');
       setSelectedClient(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving client:', error);
-      alert('Failed to save client. Please check your database connection.');
+      const detail = error?.message || error?.error_description || error?.hint || error?.code;
+      alert(detail ? `Failed to save client: ${detail}` : 'Failed to save client. Please check your database connection.');
     }
   };
 
