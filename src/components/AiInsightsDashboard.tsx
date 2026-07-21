@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import type { Client, HealthActivity, WorkforceData, AiInsight } from '../types';
-import { generateInsights } from '../services/geminiService';
+import { generateInsights, getFriendlyAiErrorMessage } from '../services/geminiService';
 import Card from './Card';
 import { BotMessageSquare, Zap, AlertTriangle, Lightbulb, FileDown } from 'lucide-react';
 import jsPDF from 'jspdf';
@@ -32,7 +32,7 @@ const AiInsightsDashboard: React.FC<AiInsightsDashboardProps> = ({ clientsData, 
       setInsights(result);
     } catch (e) {
       console.error(e);
-      setError(e instanceof Error ? e.message : 'An unknown error occurred.');
+      setError(getFriendlyAiErrorMessage(e));
     } finally {
       setIsLoading(false);
     }

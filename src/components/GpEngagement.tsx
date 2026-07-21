@@ -1,7 +1,7 @@
 import React, { useState, Fragment } from 'react';
 import type { GpPractice } from '../types';
 import Card from './Card';
-import { scanForGps } from '../services/geminiService';
+import { scanForGps, getFriendlyAiErrorMessage } from '../services/geminiService';
 import { gpPracticeService } from '../services/supabaseService';
 import { Search, Plus, Pencil, Trash2, Globe, Phone, MapPin, ServerCrash, Bot, Loader2, Save, X, ChevronDown, ChevronUp } from 'lucide-react';
 
@@ -133,10 +133,11 @@ const GpEngagement: React.FC<GpEngagementProps> = ({ practices, setPractices }) 
             const results = await scanForGps(scanQuery);
             setScanResults(results);
         } catch (err) {
-            const msg = err instanceof Error ? err.message : 'An unknown error occurred during the scan.';
-            setError(msg);
+            console.error('GP scan failed:', err);
             if (!import.meta.env.VITE_GEMINI_API_KEY && !import.meta.env.VITE_API_KEY) {
                 setError('API key not set. Add VITE_GEMINI_API_KEY to .env for AI web scan.');
+            } else {
+                setError(getFriendlyAiErrorMessage(err));
             }
         } finally {
             setIsLoading(false);

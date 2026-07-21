@@ -66,16 +66,22 @@ const ClientDemographics: React.FC<ClientDemographicsProps> = ({ clients, setCli
         await clientService.update(client.id, client);
         setClients(clients.map(c => c.id === client.id ? client : c));
       } else {
-        // Add new client with a short, random alphanumeric ID and password
+        // Add new client with a short, random alphanumeric ID.
+        // Use the password entered on the form; only auto-generate one if it was left blank.
         const newId = `C${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-        const newPassword = `pass${Math.random().toString(36).substring(2, 6)}`;
+        const isCustomPassword = !!client.password?.trim();
+        const newPassword = isCustomPassword ? client.password.trim() : `pass${Math.random().toString(36).substring(2, 6)}`;
         const newClient = { ...client, id: newId, password: newPassword };
         
         // Save to database
         await clientService.create(newClient);
         setClients([...clients, newClient]);
         
-        alert(`New client created. Their login password is: ${newPassword}\nPlease record this password securely.`);
+        alert(
+          isCustomPassword
+            ? `New client created. Login password: ${newPassword}\nPlease record this password securely.`
+            : `New client created. No password was entered, so one was generated automatically: ${newPassword}\nPlease record this password securely.`
+        );
       }
       setView('list');
       setSelectedClient(null);

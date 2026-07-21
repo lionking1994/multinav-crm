@@ -9,6 +9,27 @@ if (!API_KEY) {
 
 const genAI = new GoogleGenAI({ apiKey: API_KEY || "DISABLED" });
 
+// Translates raw Gemini/Google API errors into actionable messages for staff,
+// since the raw responses are large JSON blobs meant for developers, not end users.
+export function getFriendlyAiErrorMessage(error: unknown): string {
+    const raw = error instanceof Error ? error.message : String(error);
+
+    if (/CONSUMER_SUSPENDED/i.test(raw) || /has been suspended/i.test(raw)) {
+        return 'The AI service is unavailable because its API key has been suspended by Google (often due to a billing issue on the linked Google Cloud project). Please ask your system administrator to check the Google AI Studio / Google Cloud Console, resolve the suspension or issue a new API key, and update VITE_GEMINI_API_KEY.';
+    }
+    if (/RESOURCE_EXHAUSTED/i.test(raw) || /quota/i.test(raw)) {
+        return 'The AI service has hit its usage quota for now. Please try again later, or ask your system administrator to review the Gemini API quota/billing.';
+    }
+    if (/API key not valid|API_KEY_INVALID/i.test(raw)) {
+        return 'The AI service\'s API key is invalid. Please ask your system administrator to update VITE_GEMINI_API_KEY with a valid key.';
+    }
+    if (/PERMISSION_DENIED/i.test(raw)) {
+        return 'The AI service denied the request (permission error). Please ask your system administrator to check the Gemini API key and project settings.';
+    }
+
+    return raw;
+}
+
 function buildPrompt(clients: Client[], activities: HealthActivity[], workforce: WorkforceData): string {
     
     // Create summaries to avoid overly long prompts for large datasets

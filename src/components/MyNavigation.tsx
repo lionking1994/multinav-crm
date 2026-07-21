@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { Client, PatientData, ChatMessage, ExperienceEntry, Attachment } from '../types';
-import { translateText } from '../services/geminiService';
+import { translateText, getFriendlyAiErrorMessage } from '../services/geminiService';
 import { patientDataService, surveyService } from '../services/supabaseService';
 import Card from './Card';
 import { BookUser, MessageSquare, ListChecks, Send, Languages, LogOut, Sun, Moon, Leaf, Paperclip, X, UploadCloud, Loader2, CheckCircle } from 'lucide-react';
@@ -155,7 +155,7 @@ const ExperienceJournal = ({ experiences, setExperiences, clientId, patientLangu
             setTranslations(prev => ({ ...prev, [entryId]: translatedText }));
         } catch (error) {
             console.error('Translation failed:', error);
-            alert(`Translation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            alert(`Translation failed: ${getFriendlyAiErrorMessage(error)}`);
         } finally {
             setTranslatingId(null);
         }
