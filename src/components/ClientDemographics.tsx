@@ -75,7 +75,9 @@ const ClientDemographics: React.FC<ClientDemographicsProps> = ({ clients, setCli
         
         // Save to database
         await clientService.create(newClient);
-        setClients([...clients, newClient]);
+        // Prepend so the newest client appears at the top of the list,
+        // matching the newest-first order clientService.getAll() returns.
+        setClients([newClient, ...clients]);
         
         alert(
           isCustomPassword
